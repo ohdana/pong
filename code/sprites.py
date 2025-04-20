@@ -41,10 +41,11 @@ class Opponent(Paddle):
         self.direction = 1 if self.rect.centery < self.ball.rect.centery else -1
 
 class Ball(pygame.sprite.Sprite):
-    def __init__(self, groups, paddle_sprites):
+    def __init__(self, groups, paddle_sprites, update_score):
         super().__init__(groups)
         
         self.paddle_sprites = paddle_sprites
+        self.update_score = update_score
         self.image = pygame.Surface(SIZE['ball'], pygame.SRCALPHA)
         pygame.draw.circle(self.image, COLORS['ball'],(SIZE['ball'][0] / 2, SIZE['ball'][1] / 2), SIZE['ball'][0] / 2)
         self.rect = self.image.get_frect(center = (WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2))
@@ -65,7 +66,7 @@ class Ball(pygame.sprite.Sprite):
                     if self.rect.right > sprite.rect.left and self.old_rect.right <= sprite.old_rect.left:
                         self.rect.right = sprite.rect.left
                         self.direction.x *= -1
-                    if self.rect.left <= sprite.rect.left and self.old_rect.left >= sprite.old_rect.right:
+                    if self.rect.left <= sprite.rect.right and self.old_rect.left >= sprite.old_rect.right:
                         self.rect.left = sprite.rect.right
                         self.direction.x *= -1
                 else:
@@ -85,14 +86,14 @@ class Ball(pygame.sprite.Sprite):
             self.rect.bottom = WINDOW_HEIGHT
             self.direction.y *= -1
             
-        if self.rect.right >= WINDOW_WIDTH:
-            self.rect.right = WINDOW_WIDTH
-            self.direction.x *= -1
-            
-        if self.rect.left <= 0:
-            self.rect.left = 0
-            self.direction.x *= -1
-            
+        if self.rect.right >= WINDOW_WIDTH or self.rect.left <= 0:
+            self.update_score('player' if self.rect.x < WINDOW_WIDTH / 2 else 'opponent')
+            self.reset()
+    
+    def reset(self):
+        self.rect.center = (WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2)
+        self.direction = pygame.Vector2(choice((1,-1)),uniform(0.7,0.8) * choice((-1,1)))
+        
     def update(self, dt):
         self.old_rect = self.rect.copy()
         self.move(dt)
